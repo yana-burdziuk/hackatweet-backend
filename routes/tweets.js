@@ -1,0 +1,106 @@
+// Express imports
+const express = require('express');
+const router = express.Router();
+
+// Database imports
+require('../models/connection')
+const User = require("../models/users");
+const Tweet = require("../models/tweets");
+const Hashtag = require("../models/hashtags")
+
+
+// POST NEW TWEET 
+router.post('/tweet', async (req, res) => {
+    // Data in
+    const {token, tweet} = req.body
+
+    // Logic
+    try {
+        // (1) Checking that user is allowed to post
+        const user = await User.findOne({token})
+        if(!user)
+            res.status(400).send({
+                result: false,
+                error: "User needs to be signed in to post"
+            })
+        else {
+            // (2) Checking that tweet doesn't exceed 280 characters
+            if(tweet.length > 280) 
+                res.status(400).send({
+                    result: false,
+                    error: "Tweet is too long"
+            })
+            else {
+                // (3) Saving the tweet to DB
+                    // (4) Checking if tweet contains one or more hashtags
+                    const tweetHashtags = tweet.match(/#.+?\b/g);
+                    // (4.1) The tweet contains hashtags
+                    if(tweetHashtags) {
+                        for (let tweetHashtag of tweetHashtags) {
+                            // Checking if each tweet hashtag exists in DB
+                            const hashtag = await Hashtag.findOne({content: tweetHashtag})
+                                // (1) tweet hashtag already exists in DB
+                            if(hashtag) {
+                                const newTweet = new Tweet({
+                                    user: user._id,
+                                    text: tweet,
+                                    hashtag: hashtag._id
+                                })
+                                await newTweet.save()
+                                res.status(201).send({
+                                    result: true,
+                                    message: "Tweet saved to database!"
+                                })
+                                // (2) tweet hashtag doesn't exist in DB
+                            } else {
+                                hashtag = new Hashtag({
+                                    content: tweetHashtag
+                                })
+                                const savedHashtag = await hashtag.save()
+
+                                const newTweet = new Tweet({
+                                    user: user._id,
+                                    text: tweet,
+                                    hashtag: savedHashtag._id
+                                })
+                                await newTweet.save()
+                                res.status(201).send({
+                                    result: true,
+                                    message: "Tweet and its hashtags saved to their respective databases!"
+                                })
+                            }
+                        }
+
+
+                    } else {
+                    // (4.2) The tweet doesn't contain hashtags
+                        const newTweet = new Tweet({
+                            user: user._id,
+                            text: tweet,
+                            hashtag: null
+                        })
+                        await newTweet.save()
+                        res.status(201).send({
+                            result: true,
+                            message: "Tweet saved to database!"
+                        })
+                    }
+            }
+        }
+
+    } catch (error) {
+        console.error("Error posting tweet: ", error);
+        res.status(500).send({
+            result: false,
+            error: "Server error"
+        })
+    }
+})
+
+// GET ALL TWEETS
+
+
+
+
+
+module.exports = router;
