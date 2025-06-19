@@ -9,9 +9,10 @@ const Tweet = require("../models/tweets");
 const Hashtag = require("../models/hashtags");
 
 // POST NEW TWEET
-router.post("/tweet", async (req, res) => {
+router.post("/addtweet", async (req, res) => {
   // Data in
   const { token, tweet } = req.body;
+  console.log(token, tweet)
 
   // Logic
   try {
@@ -35,47 +36,38 @@ router.post("/tweet", async (req, res) => {
         const tweetHashtags = tweet.match(/#.+?\b/g);
         // (4.1) The tweet contains hashtags
         if (tweetHashtags) {
-          for (let tweetHashtag of tweetHashtags) {
-            // Checking if each tweet hashtag exists in DB
-            const hashtag = await Hashtag.findOne({ content: tweetHashtag });
-            // (1) tweet hashtag already exists in DB
-            if (hashtag) {
-              const newTweet = new Tweet({
+            const hashtagIDs = [];
+            for (let tweetHashtag of tweetHashtags) {
+                // Checking if each tweet hashtag exists in DB
+                let hashtag = await Hashtag.findOne({ content: tweetHashtag });
+                // (1) tweet hashtag already exists in DB
+                if (hashtag) {
+                    hashtagIDs.push(hashtag._id);
+                } else {            
+                // (2) tweet hashtag doesn't exist in DB
+                    hashtag = new Hashtag({
+                        content: tweetHashtag,
+                    });
+                    const savedHashtag = await hashtag.save();
+                    hashtagIDs.push(savedHashtag._id);
+                }
+            } 
+            const newTweet = new Tweet({
                 user: user._id,
                 text: tweet,
-                hashtag: hashtag._id,
-              });
-              await newTweet.save();
-              res.status(201).send({
+                hashtags: hashtagIDs, //🔴
+            });
+            await newTweet.save();
+            res.status(201).send({
                 result: true,
-                message: "Tweet saved to database!",
+                message: "Tweet and hashtags saved to database!",
               });
-              // (2) tweet hashtag doesn't exist in DB
-            } else {
-              hashtag = new Hashtag({
-                content: tweetHashtag,
-              });
-              const savedHashtag = await hashtag.save();
-
-              const newTweet = new Tweet({
-                user: user._id,
-                text: tweet,
-                hashtag: savedHashtag._id,
-              });
-              await newTweet.save();
-              res.status(201).send({
-                result: true,
-                message:
-                  "Tweet and its hashtags saved to their respective databases!",
-              });
-            }
-          }
         } else {
           // (4.2) The tweet doesn't contain hashtags
           const newTweet = new Tweet({
             user: user._id,
             text: tweet,
-            hashtag: null,
+            hashtags: null,
           });
           await newTweet.save();
           res.status(201).send({
@@ -95,6 +87,23 @@ router.post("/tweet", async (req, res) => {
 });
 
 // GET ALL TWEETS
+router.get("/alltweets", async (req, res) => {
+    try {
+        const tweets = await Tweet.find()
+            .populate("user", "username")
+            .populate("hashtags")
+        res.status(201).send({
+            result: true,
+            tweets
+        })
+    } catch (error) {
+        console.error("Error fetching tweets: ", error);
+        res.status(500).send({
+            result: false,
+            error: "Server error"
+        })
+    }
+})
 
 // GET ALL TWEETS FOR A SPECIFIC HASHTAG
 
@@ -109,11 +118,10 @@ router.get("/alltweets/:hashtag", async (req, res) => {
     if (!tag) {
       return res.status(404).json({ result: false, message: "Hashtag not found" });
     }
-
       // Récupérer les tweets liés à ce hashtag
     const tweets = await Tweet.find({ hashtags: tag._id })
-      .populate("users", "userName")
-      .populate("hashtags", "content");
+          .populate("user", "userName")
+          .populate("hashtags", "content");
     res.json({ result: true, tweets });
   } catch (err) {
     console.error(err); // on peut mieux faire, je laisse comme ça pour l'instant 

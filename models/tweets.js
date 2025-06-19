@@ -1,11 +1,12 @@
 // Importing mongoose
 const mongoose = require('mongoose');
+const { Schema } = mongoose;
 
 // Creating tweetSchema
 const tweetSchema = mongoose.Schema({
-    user: {type: ObjectId, ref:"users"},
+    user: {type: Schema.Types.ObjectId, ref:"users"},
     text: String,
-    hashtag: {type: ObjectId, ref:"hashtags"}
+    hashtags: [{type: Schema.Types.ObjectId, ref:"hashtags"}]
 })
 
 // Compiling tweetSchema into Tweet model
