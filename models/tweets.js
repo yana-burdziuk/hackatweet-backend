@@ -6,8 +6,12 @@ const { Schema } = mongoose;
 const tweetSchema = mongoose.Schema({
     user: {type: Schema.Types.ObjectId, ref:"users"},
     text: String,
-    hashtags: [{type: Schema.Types.ObjectId, ref:"hashtags"}]
-})
+    hashtags: [{ type: Schema.Types.ObjectId, ref: "hashtags" }]
+    },
+  {
+    timestamps: true,
+  }
+)
 
 // Compiling tweetSchema into Tweet model
 const Tweet = mongoose.model("tweets", tweetSchema)
