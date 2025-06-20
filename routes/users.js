@@ -63,19 +63,23 @@ router.post('/signup', async (req, res, next) => {
 // SIGN-IN ROUTE
 router.post('/signin', async (req, res, next) => {
   // Data in
-  const {firstName, username, password} = req.body;
+
+  const { username, password } = req.body;
 
   // Logic & data out
   try {
     // (1) Checking all fields were filled :
-    if(!checkBody(req.body, ["firstName", "username", "password"]))
+
+    if(!checkBody(req.body, ["username", "password"]))
+
       res.status(400).send({
         result: false,
         error: "Missing and/or empty fields"
       })
     else {
       // (2) Checking if the user exists :
-      const user = await User.findOne({firstName, username});
+
+      const user = await User.findOne({username});
       if(!user)
         res.status(404).send({
           result: false,
