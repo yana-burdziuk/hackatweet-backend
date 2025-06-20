@@ -14,19 +14,19 @@ const bcrypt = require("bcrypt");
 // SIGN-UP ROUTE
 router.post('/signup', async (req, res, next) => {
   // Data in
-  const {firstName, userName, password} = req.body;
+  const {firstName, username, password} = req.body;
 
   // Logic & data out
   try {
     // (1) Checking all fields were filled :
-    if(!checkBody(req.body, ["firstName", "userName", "password"]))
+    if(!checkBody(req.body, ["firstName", "username", "password"]))
       res.status(400).send({
         result: false,
         error: "Missing and/or empty fields"
       })
     else {
     // (2) Checking if the user exists :
-      let user = await User.findOne({firstName, userName});
+      let user = await User.findOne({firstName, username});
       if(user)
         res.status(400).send({
           result: false,
@@ -36,7 +36,7 @@ router.post('/signup', async (req, res, next) => {
     // (3) Saving the user to DB
         user = new User({
           firstName: firstName,
-          userName: userName,
+          username: username,
           password: bcrypt.hashSync(password, 10),
           token: uid2(32)
         })
@@ -63,19 +63,19 @@ router.post('/signup', async (req, res, next) => {
 // SIGN-IN ROUTE
 router.post('/signin', async (req, res, next) => {
   // Data in
-  const {firstName, userName, password} = req.body;
+  const {firstName, username, password} = req.body;
 
   // Logic & data out
   try {
     // (1) Checking all fields were filled :
-    if(!checkBody(req.body, ["firstName", "userName", "password"]))
+    if(!checkBody(req.body, ["firstName", "username", "password"]))
       res.status(400).send({
         result: false,
         error: "Missing and/or empty fields"
       })
     else {
       // (2) Checking if the user exists :
-      const user = await User.findOne({firstName, userName});
+      const user = await User.findOne({firstName, username});
       if(!user)
         res.status(404).send({
           result: false,
