@@ -11,9 +11,8 @@ const Hashtag = require("../models/hashtags");
 // POST NEW TWEET
 router.post("/addtweet", async (req, res) => {
   // Data in
-
-  const user = await User.findOne({ token: token })
   const { token, tweet } = req.body;
+  const user = await User.findOne({ token: token })
 
   if (!user) 
     return
